@@ -23,8 +23,9 @@ logger = logging.getLogger('webloc_to_url')
 @click.command()
 @click.option('--recursive', default=False, is_flag=True, help='Recurse over subdirectories.')
 @click.option('--delete', default=False, is_flag=True, help='Remove weblock files after conversion.')
+@click.option('--mtime', default=False, is_flag=True, help='Preserve last-modified-times.')
 @click.argument('filepath')
-def main(recursive, delete, filepath):
+def main(recursive, delete, mtime, filepath):
     import validators
     import xml.etree.ElementTree as ET
     import glob
@@ -102,6 +103,12 @@ def main(recursive, delete, filepath):
                 'IconIndex=0\n',
             ])
         logger.info(f'Created file: {url_file_name}')
+        
+        # Copy the last-modified time over to the new file
+        if mtime:
+            prev_file_times = os.stat(webloc_file)
+            cur_file_times = os.stat(url_file_name)
+            os.utime(url_file_name, ns=(cur_file_times.st_atime_ns, prev_file_times.st_mtime_ns))
 
         if delete:
             os.remove(webloc_file)
